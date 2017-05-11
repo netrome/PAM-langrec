@@ -1,11 +1,11 @@
 import tensorflow as tf
 import numpy as np
 
-class Autoencoder:
+class SoftmaxClassifier:
     """ Autoencoder class
     """
     
-    def __init__(self, image_dims=[100, 26, 1], bottleneck_dim=40):
+    def __init__(self, image_dims=[100, 26, 1], output_dim=14):
         """ Sets hyper-parameters
 
         Input:
@@ -14,15 +14,14 @@ class Autoencoder:
         """
         self.name = "Base_model"
         self.image_dims = image_dims
-        self.bottleneck_dim = bottleneck_dim
+        self.output_dim = output_dim
     
     def build_model(self):
         """ Builds model graph
         """
         self.images = tf.placeholder(tf.float32, [None] + self.image_dims, name="raw_data")
 
-        self.encoder = self.encoder(self.images)
-        self.decoder = self.decoder(self.encoder)
+        self.classifier = self.classifier(self.images)
 
         self.saver = tf.train.Saver()
 
@@ -30,16 +29,17 @@ class Autoencoder:
     def train(self):
         """ Builds training graph
         """
-        err = tf.reduce_mean(tf.abs(self.decoder - self.images), name="err")
+        labels = tf.placeholder([None, self.output_dim], name="targets")
+        err = tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=self.classifier, name="err")
         train_step = tf.train.AdamOptimizer().minimize(err, name="train_step")
 
         # Add summary scalar for tensor board
-        tf.summary.scalar("reduced_abs_err", err)
+        tf.summary.scalar("cross_entropy_loss", err)
 
         return train_step
 
     
-    def encoder(self, images):
+    def classifier(self, images):
         """ Builds encoder graph
         """
         # flatten image
@@ -49,21 +49,9 @@ class Autoencoder:
         # pass through linear layer
         W = tf.Variable(tf.truncated_normal([k, self.bottleneck_dim], stddev=0.01))
         b = tf.Variable(tf.truncated_normal([self.bottleneck_dim], stddev=0.01))
-        h = tf.nn.xw_plus_b(x, W, b, name="bottleneck")
+        h = tf.nn.xw_plus_b(x, W, b, name="logits")
         return h
 
-
-    def decoder(self, bottleneck):
-        """ Builds decoder graph
-        """
-        # pass through linear layer
-        k = np.prod(self.image_dims) 
-        W = tf.Variable(tf.truncated_normal([self.bottleneck_dim, k], stddev=0.01))
-        b = tf.Variable(tf.truncated_normal([k], stddev=0.01))
-        y = tf.nn.xw_plus_b(bottleneck, W, b, name="y")
-        
-        # reshape to image
-        return tf.reshape(y, [tf.shape(bottleneck)[0]] + self.image_dims, name="raw_out")
 
     def save(self, sess, iters, name=""):
         """ Saves tensorflow graph
