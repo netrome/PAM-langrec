@@ -1,0 +1,16 @@
+logs
+samples
+checkpoint
+*.jpg
+*.tgz
+*.npy
+*.npz
+saved_models/
+__pycache__
+out
+lfw-*
+*.wav
+*cd01
+*small_raw*
+*.csv
+sprites/
