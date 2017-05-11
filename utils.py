@@ -28,11 +28,23 @@ def get_slices(data_file):
     #slices = slices.reshape(list(slices.shape) + [1]) 
     return n, slices, meta
 
-
 def meta_to_onehot(meta):
-    lang_to_idx = {"fr":0
-    for m in meta:
-        
+    lang_to_idx = {"bf":0, "cy":1, "da":2,
+                    "de":3, "el":4, "en":5,
+                    "es":6, "fl":7, "fr":8,
+                    "it":9, "lf":10, "sf":11,
+                    "sl":12, "sv":13}
+    onehot = []
+    index = []
+    for m in meta[1:]:
+        y = np.zeros(14)
+        idx = lang_to_idx[m[0].lower()]
+        y[idx] = 1
+        index.append(idx)
+        onehot.append(y) 
+
+    return np.array(onehot), np.array(index)
+     
 
 def images_to_sprite(data):
     """Creates the sprite image along with any necessary padding

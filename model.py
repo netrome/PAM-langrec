@@ -5,7 +5,7 @@ class SoftmaxClassifier:
     """ Autoencoder class
     """
     
-    def __init__(self, image_dims=[100, 26, 1], output_dim=14):
+    def __init__(self, image_dims=[100, 26], output_dim=14):
         """ Sets hyper-parameters
 
         Input:
@@ -29,8 +29,8 @@ class SoftmaxClassifier:
     def train(self):
         """ Builds training graph
         """
-        labels = tf.placeholder([None, self.output_dim], name="targets")
-        err = tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=self.classifier, name="err")
+        labels = tf.placeholder(tf.float32, [None, self.output_dim], name="targets")
+        err = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=labels, logits=self.classifier, name="err"))
         train_step = tf.train.AdamOptimizer().minimize(err, name="train_step")
 
         # Add summary scalar for tensor board
@@ -47,8 +47,8 @@ class SoftmaxClassifier:
         x = tf.reshape(images, [tf.shape(images)[0], k], name="x")
 
         # pass through linear layer
-        W = tf.Variable(tf.truncated_normal([k, self.bottleneck_dim], stddev=0.01))
-        b = tf.Variable(tf.truncated_normal([self.bottleneck_dim], stddev=0.01))
+        W = tf.Variable(tf.truncated_normal([k, self.output_dim], stddev=0.01))
+        b = tf.Variable(tf.truncated_normal([self.output_dim], stddev=0.01))
         h = tf.nn.xw_plus_b(x, W, b, name="logits")
         return h
 

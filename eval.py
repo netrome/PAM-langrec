@@ -2,17 +2,16 @@ import tensorflow as tf
 import numpy as np
 import scipy.ndimage as image
 import matplotlib.pyplot as plt
-from model import Autoencoder
-from conv import ConvEncoder
-from deepconv import DeepConvEncoder
+from model import SoftmaxClassifier
 import sys
-from utils import get_slices
+from utils import get_slices, meta_to_onehot
 
 # get feature slices and meta data
 n, slices, meta = get_slices(sys.argv[1])
+onehot, targets = meta_to_onehot(meta)
 
 # create autoencoder
-ae = DeepConvEncoder()
+ae = SoftmaxClassifier()
 ae.build_model()
 ae.train()
 
@@ -27,21 +26,18 @@ print()
 print()
 print("------------------------------")
 
-# Test the model
-idx = [0, 1, 2, 3, 4, -1, -2, -3, -4]
-samples = slices[idx]
-out = sess.run("raw_out:0", feed_dict={"raw_data:0": samples})
+# Test the model 
+out = sess.run("logits:0", feed_dict={"raw_data:0": slices})
 
-# Plot some samples
+# Calculate error rate
+print(out.shape)
+print(onehot.shape)
+classification = np.argmax(out, axis=1)
+print(classification)
+print("----------------")
+print(targets)
 
-plt.figure()
+acc = np.sum(classification == targets)/len(targets)
+print(acc)
 
-for i in range(out.shape[0]):
-    #pueh = (out[i] - np.min(out[i])) / (np.max(out[i]) - np.min(out[i]) + 1E-6)
-    plt.subplot(2, out.shape[0], i + 1)
-    plt.pcolormesh(out[i])
-    plt.subplot(2, out.shape[0], i + out.shape[0] + 1)
-    plt.pcolormesh(samples[idx[i]])
-    #print("Scaled with value: ", np.max(out[i]) - np.min(out[i]) + 1E-6)
 
-plt.show()
